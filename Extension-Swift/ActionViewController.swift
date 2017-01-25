@@ -30,7 +30,14 @@ class ActionViewController: UIViewController {
                         DispatchQueue.main.async {
                             do {
                                 if let strongImageView = weakImageView {
-                                    if let data = item as? Data {
+                                    if let url = item as? URL {
+                                        let target = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(url.lastPathComponent)
+                                        if let exists = try? target.checkResourceIsReachable(), exists == true {
+                                            try! FileManager.default.removeItem(at: target)
+                                        }
+                                        try FileManager.default.copyItem(at: url, to: target)
+                                        strongImageView.image = UIImage(contentsOfFile: target.path)
+                                    } else if let data = item as? Data {
                                         let target = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("image")
                                         if let exists = try? target.checkResourceIsReachable(), exists == true {
                                             try! FileManager.default.removeItem(at: target)
