@@ -35,7 +35,29 @@ class ActionViewController: UIViewController {
                                         if let exists = try? target.checkResourceIsReachable(), exists == true {
                                             try! FileManager.default.removeItem(at: target)
                                         }
-                                        try FileManager.default.copyItem(at: url, to: target)
+
+                                        guard let input = InputStream(url: url), let output = OutputStream(url: target, append: false) else { fatalError() }
+
+                                        input.open()
+                                        output.open()
+
+                                        defer {
+                                            input.close()
+                                            output.close()
+                                        }
+
+                                        let chunkSize = 1024
+                                        var buffer = [UInt8](repeating:0, count: chunkSize)
+
+                                        var bytesRead = input.read(&buffer, maxLength: chunkSize)
+                                        while bytesRead > 0 {
+                                            let bytesWritten = output.write(buffer, maxLength: bytesRead)
+                                            if bytesWritten != bytesRead {
+                                                throw output.streamError!
+                                            }
+                                            bytesRead = input.read(&buffer, maxLength: chunkSize)
+                                        }
+
                                         strongImageView.image = UIImage(contentsOfFile: target.path)
                                     } else if let data = item as? Data {
                                         let target = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent("image")
